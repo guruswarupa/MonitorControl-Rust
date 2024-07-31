@@ -1,0 +1,10 @@
+/home/msgs/MonitorControl-Rust/target/debug/deps/libfluent_langneg-39cfd43b96826582.rmeta: /home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/lib.rs /home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/accepted_languages.rs /home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/negotiate/mod.rs /home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/negotiate/likely_subtags.rs
+
+/home/msgs/MonitorControl-Rust/target/debug/deps/libfluent_langneg-39cfd43b96826582.rlib: /home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/lib.rs /home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/accepted_languages.rs /home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/negotiate/mod.rs /home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/negotiate/likely_subtags.rs
+
+/home/msgs/MonitorControl-Rust/target/debug/deps/fluent_langneg-39cfd43b96826582.d: /home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/lib.rs /home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/accepted_languages.rs /home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/negotiate/mod.rs /home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/negotiate/likely_subtags.rs
+
+/home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/lib.rs:
+/home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/accepted_languages.rs:
+/home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/negotiate/mod.rs:
+/home/msgs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/fluent-langneg-0.13.0/src/negotiate/likely_subtags.rs:
