@@ -18,21 +18,16 @@ use crossterm::{
 struct MonitorManagerApp {
     connected_monitors: Vec<String>,
     selected_index: usize,
-    resolutions: Vec<Vec<String>>,
     current_selection: Option<String>,
 }
 
 impl MonitorManagerApp {
     fn new() -> Self {
         let connected_monitors = Self::detect_connected_monitors();
-        let resolutions = connected_monitors.iter()
-            .map(|monitor| Self::get_resolutions(monitor))
-            .collect();
 
         Self {
             connected_monitors,
             selected_index: 0,
-            resolutions,
             current_selection: None,
         }
     }
@@ -150,34 +145,27 @@ impl MonitorManagerApp {
 
     fn draw<B: tui::backend::Backend>(&self, f: &mut tui::Frame<B>) {
         let size = f.size();
-        
-        // Define the layout with two main chunks: the main container and the instructions
+    
+        // Define layout with two vertical chunks
         let layout_chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Percentage(80), // Main container
-                Constraint::Percentage(20), // Instructions
+                Constraint::Percentage(95), // Monitor Control list
+                Constraint::Percentage(5), // Instructions
             ].as_ref())
             .split(size);
-        
-        // Define the main container block
-        let main_container = Block::default()
-            .borders(Borders::ALL)
-            .title("Monitor Control")
-            .style(Style::default().fg(Color::White).bg(Color::Black));
-        
-        // Define the inner layout of the main container
-        let inner_chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Percentage(50), // Monitor list
-                Constraint::Percentage(25), // Actions list
-                Constraint::Percentage(25), // Controls list
-            ].as_ref())
-            .split(layout_chunks[0]);
-        
-        // Create the widgets
-        let items: Vec<ListItem> = self.connected_monitors.iter().enumerate().map(|(i, m)| {
+    
+        // Combine monitors, actions, and controls into a single list
+        let mut items: Vec<ListItem> = Vec::new();
+    
+        // Add title for monitors section with light blue color
+        items.push(ListItem::new(Spans::from(vec![Span::styled(
+            "Monitors:",
+            Style::default().fg(Color::LightBlue).add_modifier(Modifier::BOLD),
+        )])));
+    
+        // Add monitors to the list
+        items.extend(self.connected_monitors.iter().enumerate().map(|(i, m)| {
             let is_selected = self.selected_index == i;
             let resolution = self.get_current_resolution(m);
             let style = if is_selected {
@@ -189,40 +177,70 @@ impl MonitorManagerApp {
                 Span::styled(format!("{}: ", m), style),
                 Span::raw(resolution)
             ]))
-        }).collect();
-        
-        let monitor_list = List::new(items)
-            .block(Block::default().borders(Borders::ALL).title("Monitors"))
-            .highlight_style(Style::default().add_modifier(Modifier::BOLD));
-        
-        let action_items = vec![
+        }));
+    
+        // Add title for actions section with light blue color
+        items.push(ListItem::new(Spans::from(vec![Span::styled(
+            "Actions:",
+            Style::default().fg(Color::LightBlue).add_modifier(Modifier::BOLD),
+        )])));
+    
+        // Add actions to the list
+        let actions = vec![
             "Duplicate Displays (d)",
             "Extend Displays (e)",
             "Auto Detect Displays (a)"
         ];
-        let action_list = List::new(action_items.iter().map(|&item| ListItem::new(item)).collect::<Vec<ListItem>>())
-            .block(Block::default().borders(Borders::ALL).title("Actions"));
-        
-        let control_items = vec![
+        items.extend(actions.iter().enumerate().map(|(i, &item)| {
+            let is_selected = self.selected_index == self.connected_monitors.len() + i;
+            let style = if is_selected {
+                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default()
+            };
+            ListItem::new(Spans::from(Span::styled(item, style)))
+        }));
+    
+        // Add title for controls section with light blue color
+        items.push(ListItem::new(Spans::from(vec![Span::styled(
+            "Controls:",
+            Style::default().fg(Color::LightBlue).add_modifier(Modifier::BOLD),
+        )])));
+    
+        // Add controls to the list
+        let controls = vec![
             "Enable Primary Monitor (P)",
             "Enable Secondary Monitor (O)",
             "Disable Primary Monitor (p)",
             "Disable Secondary Monitor (o)"
         ];
-        let control_list = List::new(control_items.iter().map(|&item| ListItem::new(item)).collect::<Vec<ListItem>>())
-            .block(Block::default().borders(Borders::ALL).title("Controls"));
-        
-        // Render the widgets inside the main container
-        f.render_widget(main_container, layout_chunks[0]);
-        f.render_widget(monitor_list, inner_chunks[0]);
-        f.render_widget(action_list, inner_chunks[1]);
-        f.render_widget(control_list, inner_chunks[2]);
-        
+        items.extend(controls.iter().enumerate().map(|(i, &item)| {
+            let is_selected = self.selected_index == self.connected_monitors.len() + actions.len() + i;
+            let style = if is_selected {
+                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default()
+            };
+            ListItem::new(Spans::from(Span::styled(item, style)))
+        }));
+    
+        // Create the Monitor Control list widget
+        let monitor_control_list = List::new(items)
+            .block(Block::default().borders(Borders::ALL).title("Monitor Control"))
+            .highlight_style(Style::default().add_modifier(Modifier::BOLD));
+    
+        // Render the Monitor Control list
+        f.render_widget(monitor_control_list, layout_chunks[0]);
+    
         // Instructions
-        let instructions = Paragraph::new("Use Arrow Keys to navigate, Enter to select resolution, q to quit")
-            .style(Style::default().fg(Color::LightCyan));
+        let instructions = Paragraph::new("Use Arrow Keys to navigate, Enter to select action, q to quit")
+            .style(Style::default().fg(Color::LightCyan))
+            .block(Block::default().borders(Borders::ALL).title("Instructions"));
+    
+        // Render the instructions
         f.render_widget(instructions, layout_chunks[1]);
     }
+    
     
     fn get_current_resolution(&self, monitor: &str) -> String {
         let output = Command::new("xrandr")
@@ -260,59 +278,71 @@ impl MonitorManagerApp {
     fn handle_input(&mut self, event: Event) -> bool {
         match event {
             Event::Key(key) => match key.code {
-                KeyCode::Char('q') => return true,
+                KeyCode::Char('q') => return true, // Quit the application
+                
                 KeyCode::Up => {
                     if self.selected_index > 0 {
                         self.selected_index -= 1;
                     }
                 }
                 KeyCode::Down => {
-                    if self.selected_index < self.connected_monitors.len() - 1 {
+                    if self.selected_index < self.get_total_items() - 1 {
                         self.selected_index += 1;
                     }
                 }
+                
                 KeyCode::Enter => {
-                    if self.selected_index < self.connected_monitors.len() {
-                        self.current_selection = Some(self.connected_monitors[self.selected_index].clone());
-                    }
-                }
-                KeyCode::Char('d') => self.duplicate_displays(),
-                KeyCode::Char('e') => self.extend_displays(),
-                KeyCode::Char('a') => self.auto_detect_displays(),
-                KeyCode::Char('s') => {
-                    if let Some(monitor) = &self.current_selection {
-                        let resolutions = &self.resolutions[self.selected_index];
-                        if let Some(resolution) = resolutions.get(0) {
-                            self.set_resolution(monitor, resolution);
+                    let index = self.selected_index;
+                    if index < self.connected_monitors.len() {
+                        // No action on Enter for monitor items
+                        self.current_selection = Some(self.connected_monitors[index].clone());
+                    } else if index < self.connected_monitors.len() + 3 {
+                        // Actions
+                        match index {
+                            i if i == self.connected_monitors.len() => self.duplicate_displays(), // Duplicate Displays
+                            i if i == self.connected_monitors.len() + 1 => self.extend_displays(), // Extend Displays
+                            i if i == self.connected_monitors.len() + 2 => self.auto_detect_displays(), // Auto Detect Displays
+                            _ => {}
+                        }
+                    } else if index < self.connected_monitors.len() + 3 + 4 {
+                        // Controls
+                        match index {
+                            i if i == self.connected_monitors.len() + 3 => {
+                                if let Some(monitor) = self.connected_monitors.get(0) {
+                                    self.enable_monitor(monitor);
+                                }
+                            }
+                            i if i == self.connected_monitors.len() + 4 => {
+                                if let Some(monitor) = self.connected_monitors.get(1) {
+                                    self.enable_monitor(monitor);
+                                }
+                            }
+                            i if i == self.connected_monitors.len() + 5 => {
+                                if let Some(monitor) = self.connected_monitors.get(0) {
+                                    self.disable_monitor(monitor);
+                                }
+                            }
+                            i if i == self.connected_monitors.len() + 6 => {
+                                if let Some(monitor) = self.connected_monitors.get(1) {
+                                    self.disable_monitor(monitor);
+                                }
+                            }
+                            _ => {}
                         }
                     }
                 }
-                KeyCode::Char('P') => {
-                    if let Some(monitor) = self.connected_monitors.get(0) {
-                        self.enable_monitor(monitor);
-                    }
-                }
-                KeyCode::Char('O') => {
-                    if let Some(monitor) = self.connected_monitors.get(1) {
-                        self.enable_monitor(monitor);
-                    }
-                }
-                KeyCode::Char('p') => {
-                    if let Some(monitor) = self.connected_monitors.get(0) {
-                        self.disable_monitor(monitor);
-                    }
-                }
-                KeyCode::Char('o') => {
-                    if let Some(monitor) = self.connected_monitors.get(1) {
-                        self.disable_monitor(monitor);
-                    }
-                }
+    
                 _ => {}
             },
             _ => {}
         }
         false
     }
+    
+    fn get_total_items(&self) -> usize {
+        self.connected_monitors.len() + 3 + 4 // monitors + actions + controls
+    }
+    
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
